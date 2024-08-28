@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLE Client with Command</title>
+</head>
+<body>
+    <h1>ESP32-S3 BLE Client with Command</h1>
+    <button id="connect">Connect to ESP32-S3</button>
+    <button id="request-data" disabled>Request Data</button>
+    <p id="output"></p>
+
+    <script>
+        function isWebBluetoothEnabled() {
+        if (!navigator.bluetooth) {
+           console.log('Web Bluetooth API is not available in this browser!');
+           document.getElementById('connect').disabled = true;
+           return false
+        }
+           console.log('Web Bluetooth API is available in this browser!');
+           alert("working");
+           return true
+        }
+        isWebBluetoothEnabled();
+
+        const serviceUUID = '0000180d-0000-1000-8000-00805f9b34fb';
+        const dataCharacteristicUUID = '00002a37-0000-1000-8000-00805f9b34fb';
+        const commandCharacteristicUUID = '00002a38-0000-1000-8000-00805f9b34fb';
+        let dataCharacteristic;
+        let commandCharacteristic;
+
+        document.getElementById('connect').addEventListener('click', async () => {
+            try {
+                console.log('Requesting Bluetooth Device...');
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [serviceUUID] }]
+                });
+
+                console.log('Connecting to GATT Server...');
+                const server = await device.gatt.connect();
+
+                console.log('Getting Service...');
+                const service = await server.getPrimaryService(serviceUUID);
+
+                console.log('Getting Data Characteristic...');
+                dataCharacteristic = await service.getCharacteristic(dataCharacteristicUUID);
+
+                console.log('Getting Command Characteristic...');
+                commandCharacteristic = await service.getCharacteristic(commandCharacteristicUUID);
+
+                console.log('Starting Notifications...');
+                await dataCharacteristic.startNotifications();
+
+                dataCharacteristic.addEventListener('characteristicvaluechanged',
+                    handleCharacteristicValueChanged);
+
+                document.getElementById('request-data').disabled = false;
+                document.getElementById('output').textContent = 'Connected to ESP32-S3!';
+            } catch (error) {
+                console.error('Error: ', error);
+            }
+        });
+
+        document.getElementById('request-data').addEventListener('click', async () => {
+            try {
+                const command = new TextEncoder().encode('SEND_DATA');
+                await commandCharacteristic.writeValue(command);
+                console.log('Command SENT: SEND_DATA');
+            } catch (error) {
+                console.error('Error: ', error);
+            }
+        });
+
+        function handleCharacteristicValueChanged(event) {
+            const value = new TextDecoder().decode(event.target.value);
+            console.log('Received:', value);
+            document.getElementById('output').textContent = 'Received: ' + value;
+        }
+    </script>
+</body>
+</html>
