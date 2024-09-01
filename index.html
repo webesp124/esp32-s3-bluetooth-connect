@@ -4,79 +4,153 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BLE Client with Command</title>
+    <link href="./main_output.css" rel="stylesheet">
 </head>
-<body>
-    <h1>ESP32-S3 BLE Client with Command</h1>
-    <button id="connect">Connect to ESP32-S3</button>
-    <button id="request-data" disabled>Request Data</button>
-    <p id="output"></p>
+<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col justify-center items-center p-4">
+    <div class="w-full max-w-md">
+        <h1 class="text-3xl font-bold mb-6 text-center">GBA Cartridge Reader Bluetooth Setup</h1>
+
+        <!-- Network Information -->
+        <div class="p-4 mb-6 bg-gray-800 border border-gray-700">
+            <p class="text-lg mb-2"><strong>Current IP-Address: </strong><span id="ip-address" class="text-gray-400"></span></p>
+            <p class="text-lg mb-2"><strong>Current SSID: </strong><span id="ssid" class="text-gray-400"></span></p>
+            <p class="text-lg mb-2"><strong>Is Creating AP: </strong><span id="is-creating-ap" class="text-gray-400"></span></p>
+            <div class="text-lg"><strong>Link to Emulator: </strong><a id="link-gba" class="text-gray-400" href=""></a></div>
+        </div>
+
+        <!-- Wi-Fi Credentials -->
+        <div class="p-4 mb-6 bg-gray-800 border border-gray-700">
+            <div class="mb-4">
+                <label for="input-ssid" class="block text-lg mb-2"><strong>Set SSID:</strong></label>
+                <input type="text" id="input-ssid" class="w-full p-2 bg-gray-700 border border-gray-600 text-white" placeholder="Enter SSID" />
+            </div>
+            <div class="mb-4">
+                <label for="input-password" class="block text-lg mb-2"><strong>Set Password:</strong></label>
+                <input type="password" id="input-password" class="w-full p-2 bg-gray-700 border border-gray-600 text-white" placeholder="Enter Password" />
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" id="start-access-point" class="mr-2">
+                <label for="start-access-point" class="text-lg"><strong>Start Access Point</strong></label>
+            </div>
+            <button id="set-credentials" disabled class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 mt-4 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed">Set Wi-Fi Credentials</button>
+        </div>
+
+        <!-- Actions -->
+        <div class="p-4 mb-6 bg-gray-800 border border-gray-700 text-center">
+            <div class="flex space-x-4">
+                <button id="connect" class="w-full bg-green-600 hover:bg-green-700 text-white py-2">Connect</button>
+                <button id="request-data" disabled class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed">Request Data</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        function isWebBluetoothEnabled() {
-        if (!navigator.bluetooth) {
-           console.log('Web Bluetooth API is not available in this browser!');
-           document.getElementById('connect').disabled = true;
-           return false
-        }
-           console.log('Web Bluetooth API is available in this browser!');
-           alert("working");
-           return true
-        }
-        isWebBluetoothEnabled();
-
         const serviceUUID = '0000180d-0000-1000-8000-00805f9b34fb';
         const dataCharacteristicUUID = '00002a37-0000-1000-8000-00805f9b34fb';
         const commandCharacteristicUUID = '00002a38-0000-1000-8000-00805f9b34fb';
         let dataCharacteristic;
         let commandCharacteristic;
-
-        document.getElementById('connect').addEventListener('click', async () => {
-            try {
-                console.log('Requesting Bluetooth Device...');
-                const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: [serviceUUID] }]
-                });
-
-                console.log('Connecting to GATT Server...');
-                const server = await device.gatt.connect();
-
-                console.log('Getting Service...');
-                const service = await server.getPrimaryService(serviceUUID);
-
-                console.log('Getting Data Characteristic...');
-                dataCharacteristic = await service.getCharacteristic(dataCharacteristicUUID);
-
-                console.log('Getting Command Characteristic...');
-                commandCharacteristic = await service.getCharacteristic(commandCharacteristicUUID);
-
-                console.log('Starting Notifications...');
-                await dataCharacteristic.startNotifications();
-
-                dataCharacteristic.addEventListener('characteristicvaluechanged',
-                    handleCharacteristicValueChanged);
-
-                document.getElementById('request-data').disabled = false;
-                document.getElementById('output').textContent = 'Connected to ESP32-S3!';
-            } catch (error) {
-                console.error('Error: ', error);
-            }
+        
+document.getElementById('connect').addEventListener('click', async () => {
+    try {
+        console.log('Requesting Bluetooth Device...');
+        const device = await navigator.bluetooth.requestDevice({
+            filters: [{ services: [serviceUUID] }]
         });
 
-        document.getElementById('request-data').addEventListener('click', async () => {
-            try {
-                const command = new TextEncoder().encode('SEND_DATA');
-                await commandCharacteristic.writeValue(command);
-                console.log('Command SENT: SEND_DATA');
-            } catch (error) {
-                console.error('Error: ', error);
-            }
-        });
+        console.log('Connecting to GATT Server...');
+        const server = await device.gatt.connect();
 
-        function handleCharacteristicValueChanged(event) {
-            const value = new TextDecoder().decode(event.target.value);
-            console.log('Received:', value);
-            document.getElementById('output').textContent = 'Received: ' + value;
+        console.log('Getting Service...');
+        const service = await server.getPrimaryService(serviceUUID);
+
+        console.log('Getting Data Characteristic...');
+        dataCharacteristic = await service.getCharacteristic(dataCharacteristicUUID);
+
+        console.log('Getting Command Characteristic...');
+        commandCharacteristic = await service.getCharacteristic(commandCharacteristicUUID);
+
+        console.log('Starting Notifications...');
+        await dataCharacteristic.startNotifications();
+
+        dataCharacteristic.addEventListener('characteristicvaluechanged',
+            handleCharacteristicValueChanged);
+
+        document.getElementById('request-data').disabled = false;
+        document.getElementById('connect').disabled = true;
+        document.getElementById('set-credentials').disabled = false;
+        
+        document.getElementById('output').textContent = 'Connected to ESP32-S3!';
+        requestData();
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+
+async function requestData(){
+    try {
+            const credentials = { command: "get_credentials" };
+            const jsonString = JSON.stringify(credentials);
+            const command = new TextEncoder().encode(jsonString);
+
+            await commandCharacteristic.writeValue(command);
+            console.log('Credentials REQUESTED:', jsonString);
+
+            document.getElementById('output').textContent = 'Wi-Fi credentials requested from ESP32!';
+
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+document.getElementById('request-data').addEventListener('click', async () => {
+    requestData();
+});
+
+document.getElementById('set-credentials').addEventListener('click', async () => {
+    try {
+        const ssid = document.getElementById('input-ssid').value;
+        const password = document.getElementById('input-password').value;
+        const start_ap = document.getElementById('start-access-point').checked;
+        console.log(start_ap);
+
+        if (ssid && password) {
+            const credentials = { ssid: ssid, password: password, command: "set_credentials", create_ap: start_ap };
+            const jsonString = JSON.stringify(credentials);
+            const command = new TextEncoder().encode(jsonString);
+
+            await commandCharacteristic.writeValue(command);
+            console.log('Credentials SENT:', jsonString);
+
+            document.getElementById('output').textContent = 'Wi-Fi credentials sent to ESP32!';
+            
+            requestData();
+        } else {
+            alert('Please enter both SSID and password.');
         }
-    </script>
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+
+function handleCharacteristicValueChanged(event) {
+    const value = new TextDecoder().decode(event.target.value);
+    console.log('Received:', value);
+
+    const jsonResponse = JSON.parse(value);
+    
+    if (jsonResponse.hasOwnProperty("ssid")) {
+        document.getElementById('ssid').textContent = jsonResponse["ssid"];
+    }
+    if (jsonResponse.hasOwnProperty("wifi_ip_address")) {
+        document.getElementById('ip-address').textContent = jsonResponse["wifi_ip_address"];
+        document.getElementById('link-gba').textContent = "https://" + jsonResponse["wifi_ip_address"] + "/";
+        document.getElementById('link-gba').href = "https://" + jsonResponse["wifi_ip_address"] + "/";
+    }
+    if (jsonResponse.hasOwnProperty("is_creating_ap")) {
+        document.getElementById('is-creating-ap').textContent = jsonResponse["is_creating_ap"];
+    }
+}
+</script>
 </body>
 </html>
