@@ -15,7 +15,9 @@
             <p class="text-lg mb-2"><strong>Current IP-Address: </strong><span id="ip-address" class="text-gray-400"></span></p>
             <p class="text-lg mb-2"><strong>Current SSID: </strong><span id="ssid" class="text-gray-400"></span></p>
             <p class="text-lg mb-2"><strong>Is Creating AP: </strong><span id="is-creating-ap" class="text-gray-400"></span></p>
-            <div class="text-lg"><strong>Link to Emulator: </strong><a id="link-gba" class="text-gray-400" href=""></a></div>
+            <div class="text-lg mb-2"><strong>Link to Emulator: </strong><a id="link-gba" class="text-gray-400" href=""></a></div>
+            <div class="text-lg"><strong>Local IP Emulator: </strong><a id="local-ip-gba" class="text-gray-400" href=""></a></div>
+            <div id="qrcode"></div>
         </div>
 
         <!-- Wi-Fi Credentials -->
@@ -34,6 +36,27 @@
             </div>
             <button id="set-credentials" disabled class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 mt-4 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed">Set Wi-Fi Credentials</button>
         </div>
+        
+        <!-- SSL Certificate and Key -->
+        <div class="p-4 mb-6 bg-gray-800 border border-gray-700">
+            <div class="mb-4">
+                <label for="input-cert" class="block text-lg mb-2"><strong>PEM Certificate:</strong></label>
+                <textarea id="input-cert" class="w-full p-2 bg-gray-700 border border-gray-600 text-white" placeholder="Paste PEM Certificate" rows="6"></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="input-key" class="block text-lg mb-2"><strong>PEM Private Key:</strong></label>
+                <textarea id="input-key" class="w-full p-2 bg-gray-700 border border-gray-600 text-white" placeholder="Paste PEM Private Key" rows="6"></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="input-web-url" class="block text-lg mb-2"><strong>Web URL:</strong></label>
+                <input type="text" id="input-web-url" class="w-full p-2 bg-gray-700 border border-gray-600 text-white" placeholder="Enter URL" />
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" id="use-default-ssl-certificate" class="mr-2">
+                <label for="use-default-ssl-certificate" class="text-lg"><strong>Use default SSL certificate:</strong></label>
+            </div>
+            <button id="set-ssl" disabled class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 mt-4 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed">Set SSL Certificate & Key</button>
+        </div>
 
         <!-- Actions -->
         <div class="p-4 mb-6 bg-gray-800 border border-gray-700 text-center">
@@ -43,6 +66,8 @@
             </div>
         </div>
     </div>
+
+    <script src="./src/qrcode.min.js"></script>
 
     <script>
         const serviceUUID = '0000180d-0000-1000-8000-00805f9b34fb';
@@ -79,8 +104,9 @@ document.getElementById('connect').addEventListener('click', async () => {
         document.getElementById('request-data').disabled = false;
         document.getElementById('connect').disabled = true;
         document.getElementById('set-credentials').disabled = false;
+        document.getElementById('set-ssl').disabled = false;
         
-        document.getElementById('output').textContent = 'Connected to ESP32-S3!';
+        //document.getElementById('output').textContent = 'Connected to ESP32-S3!';
         requestData();
     } catch (error) {
         console.error('Error:', error);
@@ -96,7 +122,7 @@ async function requestData(){
             await commandCharacteristic.writeValue(command);
             console.log('Credentials REQUESTED:', jsonString);
 
-            document.getElementById('output').textContent = 'Wi-Fi credentials requested from ESP32!';
+            //document.getElementById('output').textContent = 'Wi-Fi credentials requested from ESP32!';
 
     } catch (error) {
         console.error('Error:', error);
@@ -121,8 +147,6 @@ document.getElementById('set-credentials').addEventListener('click', async () =>
 
             await commandCharacteristic.writeValue(command);
             console.log('Credentials SENT:', jsonString);
-
-            document.getElementById('output').textContent = 'Wi-Fi credentials sent to ESP32!';
             
             requestData();
         } else {
@@ -131,6 +155,76 @@ document.getElementById('set-credentials').addEventListener('click', async () =>
     } catch (error) {
         console.error('Error:', error);
     }
+});
+
+// Helper function to chunk large data into 512-byte parts
+function chunkString(str, size) {
+    const numChunks = Math.ceil(str.length / size);
+    let chunks = [];
+    for (let i = 0; i < numChunks; i++) {
+        chunks.push(str.slice(i * size, (i + 1) * size));
+    }
+    return chunks;
+}
+
+async function sendChunkedData(commandCharacteristic, pemData, type) {
+    const chunks = chunkString(pemData, 350);  // Limit to 350 to leave space for metadata
+    for (let i = 0; i < chunks.length; i++) {
+        const bufferData = {
+            command: 'set_ssl_cert_pem',
+            type: type,  // "cert" or "key"
+            bufferIndex: i,
+            chunk: chunks[i],
+            isLastChunk: i === chunks.length - 1
+        };
+
+        const jsonString = JSON.stringify(bufferData);
+        console.log(jsonString.length);
+        const command = new TextEncoder().encode(jsonString);
+
+        // Write the chunk to BLE characteristic
+        await commandCharacteristic.writeValue(command);
+        console.log(`Chunk ${i + 1}/${chunks.length} SENT for ${type}`);
+    }
+}
+
+// Event listener to handle the transmission of the certificate and key
+document.getElementById('set-ssl').addEventListener('click', async () => {
+    try {
+        const cert = document.getElementById('input-cert').value;
+        const key = document.getElementById('input-key').value;
+
+        if (cert && key && cert.length > 1023 && key.length > 1023) {
+            // Send the certificate and key in chunks
+            await sendChunkedData(commandCharacteristic, cert, 'cert');
+            await sendChunkedData(commandCharacteristic, key, 'key');
+
+            console.log('SSL certificate and key sent to ESP32!');
+        } else {
+            alert('Please enter both the certificate and private key.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+    
+    const webUrl = document.getElementById('input-web-url').value;
+    const useDefaultSSLCertificate = document.getElementById('use-default-ssl-certificate').checked;
+    
+    if (webUrl) {
+        const credentials = { web_url: webUrl, command: "set_web_url" };
+        const jsonString = JSON.stringify(credentials);
+        const command = new TextEncoder().encode(jsonString);
+
+        await commandCharacteristic.writeValue(command);
+        console.log('Web Url SENT:', jsonString);
+    }
+    
+    const credentials = { use_default_ssl_cert: useDefaultSSLCertificate, command: "set_use_default_ssl_cert" };
+    const jsonString = JSON.stringify(credentials);
+    const command = new TextEncoder().encode(jsonString);
+
+    await commandCharacteristic.writeValue(command);
+    console.log('Use default ssl cert SENT:', jsonString);
 });
 
 function handleCharacteristicValueChanged(event) {
@@ -144,8 +238,28 @@ function handleCharacteristicValueChanged(event) {
     }
     if (jsonResponse.hasOwnProperty("wifi_ip_address")) {
         document.getElementById('ip-address').textContent = jsonResponse["wifi_ip_address"];
-        document.getElementById('link-gba').textContent = "https://" + jsonResponse["wifi_ip_address"] + "/";
-        document.getElementById('link-gba').href = "https://" + jsonResponse["wifi_ip_address"] + "/";
+        
+        let localIPGBA = "https://" + jsonResponse["wifi_ip_address"] + "/";
+        let linkGBAAddress = "https://" + jsonResponse["web_url"] + "/";
+        
+        if (jsonResponse["web_url"] == "") {
+            linkGBAAddress = localIPGBA;
+        }
+        
+        document.getElementById('link-gba').textContent = linkGBAAddress;
+        document.getElementById('link-gba').href = linkGBAAddress;
+        
+        document.getElementById('local-ip-gba').textContent = localIPGBA;
+        document.getElementById('local-ip-gba').href = localIPGBA;
+
+        var qrcode = new QRCode(document.getElementById("qrcode"), {
+            text: linkGBAAddress,
+            width: 128,
+            height: 128,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
     }
     if (jsonResponse.hasOwnProperty("is_creating_ap")) {
         document.getElementById('is-creating-ap').textContent = jsonResponse["is_creating_ap"];
