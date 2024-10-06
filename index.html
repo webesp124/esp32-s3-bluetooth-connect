@@ -76,6 +76,10 @@
         let dataCharacteristic;
         let commandCharacteristic;
         
+        if(!navigator.bluetooth){
+          alert("Your browser does not support Web Bluetooth!");
+        }
+        
 document.getElementById('connect').addEventListener('click', async () => {
     try {
         console.log('Requesting Bluetooth Device...');
