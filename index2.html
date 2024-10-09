@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WifiBOY Setup</title>
+    <link href="./main_output.css" rel="stylesheet">
+    <style>
+    #qrcode img {
+    margin: 0 auto;
+    }
+    </style>
+    <style>
+    .lds-roller {
+  /* change color here */
+  color: #fff
+}
+.lds-roller,
+.lds-roller div,
+.lds-roller div:after {
+  box-sizing: border-box;
+}
+.lds-roller {
+
+  position: relative;
+  scale: 0.43;
+  top: -9px;
+  left: -9px;
+  width: 42px;
+  height: 25px;
+}
+.lds-roller div {
+  animation: lds-roller 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  transform-origin: 40px 40px;
+}
+.lds-roller div:after {
+  content: " ";
+  display: block;
+  position: absolute;
+  width: 7.2px;
+  height: 7.2px;
+  border-radius: 50%;
+  background: currentColor;
+  margin: -3.6px 0 0 -3.6px;
+}
+.lds-roller div:nth-child(1) {
+  animation-delay: -0.036s;
+}
+.lds-roller div:nth-child(1):after {
+  top: 62.62742px;
+  left: 62.62742px;
+}
+.lds-roller div:nth-child(2) {
+  animation-delay: -0.072s;
+}
+.lds-roller div:nth-child(2):after {
+  top: 67.71281px;
+  left: 56px;
+}
+.lds-roller div:nth-child(3) {
+  animation-delay: -0.108s;
+}
+.lds-roller div:nth-child(3):after {
+  top: 70.90963px;
+  left: 48.28221px;
+}
+.lds-roller div:nth-child(4) {
+  animation-delay: -0.144s;
+}
+.lds-roller div:nth-child(4):after {
+  top: 72px;
+  left: 40px;
+}
+.lds-roller div:nth-child(5) {
+  animation-delay: -0.18s;
+}
+.lds-roller div:nth-child(5):after {
+  top: 70.90963px;
+  left: 31.71779px;
+}
+.lds-roller div:nth-child(6) {
+  animation-delay: -0.216s;
+}
+.lds-roller div:nth-child(6):after {
+  top: 67.71281px;
+  left: 24px;
+}
+.lds-roller div:nth-child(7) {
+  animation-delay: -0.252s;
+}
+.lds-roller div:nth-child(7):after {
+  top: 62.62742px;
+  left: 17.37258px;
+}
+.lds-roller div:nth-child(8) {
+  animation-delay: -0.288s;
+}
+.lds-roller div:nth-child(8):after {
+  top: 56px;
+  left: 12.28719px;
+}
+@keyframes lds-roller {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+    </style>
+    <script>
+    
+        const serviceUUID = '0000180d-0000-1000-8000-00805f9b34fb';
+        const dataCharacteristicUUID = '00002a37-0000-1000-8000-00805f9b34fb';
+        const commandCharacteristicUUID = '00002a38-0000-1000-8000-00805f9b34fb';
+        let dataCharacteristic;
+        let commandCharacteristic;
+        var connectionType = "";
+        var qrcode;
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            // Step 1: Detect if browser supports Web Bluetooth
+            const isBluetoothSupported = navigator.bluetooth ? true : false;
+            const step1Bluetooth = document.getElementById('step1-bluetooth');
+            const step1Wifi = document.getElementById('step1-wifi');
+
+            if (isBluetoothSupported) {
+                step1Bluetooth.style.display = 'block';
+                step1Wifi.style.display = 'none';
+            } else {
+                step1Bluetooth.style.display = 'none';
+                step1Wifi.style.display = 'block';
+            }
+        });
+        
+        function handleCharacteristicValueChanged(event) {
+        console.log(event.target.value);
+    const value = new TextDecoder().decode(event.target.value);
+    console.log('Received:', value);
+
+    const jsonResponse = JSON.parse(value);
+    
+    if (jsonResponse.hasOwnProperty("ssid")) {
+        if(document.getElementById('ssid').textContent != "" && document.getElementById('ssid').textContent != jsonResponse["ssid"]) {
+            document.getElementById('set-wifi-credentials').style.display = 'none';
+            document.getElementById('visit-emulator-step').style.display = 'block';
+        }
+        
+        document.getElementById('ssid').textContent = jsonResponse["ssid"];
+    }
+    if (jsonResponse.hasOwnProperty("wifi_ip_address")) {
+        //document.getElementById('ip-address').textContent = jsonResponse["wifi_ip_address"];
+        
+        let localIPGBA = "https://" + jsonResponse["wifi_ip_address"] + "/";
+        let linkGBAAddress = "https://" + jsonResponse["web_url"] + "/";
+        
+        if (jsonResponse["web_url"] == "") {
+            linkGBAAddress = localIPGBA;
+        }
+        
+        document.getElementById('link-gba').textContent = linkGBAAddress;
+        document.getElementById('link-gba').href = linkGBAAddress;
+        
+        document.getElementById('local-ip-gba').textContent = localIPGBA;
+        document.getElementById('local-ip-gba').href = localIPGBA;
+        try {
+           qrcode.clear();
+        } catch (error) {
+        console.log('Error:', error);
+    }
+        if(!qrcode) {
+            qrcode = new QRCode(document.getElementById("qrcode"), {
+                text: linkGBAAddress,
+                width: 128,
+                height: 128,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        } else {
+            qrcode.clear();
+            qrcode.makeCode(linkGBAAddress);
+        }
+
+        document.getElementById('link-emulator').href = linkGBAAddress;
+    }
+    if (jsonResponse.hasOwnProperty("is_creating_ap")) {
+        document.getElementById('is-creating-ap').textContent = jsonResponse["is_creating_ap"];
+    }
+    // Check if the response is an array of networks
+    if (jsonResponse.hasOwnProperty("n")) {
+    console.log(32343443);
+        /*const networksList = document.getElementById('networks-list');
+        networksList.innerHTML = ''; // Clear previous entries
+
+        jsonResponse.forEach(network => {
+            const networkItem = document.createElement('li');
+            networkItem.textContent = `${network.ssid} (RSSI: ${network.rssi}, Encryption: ${network.encryption})`;
+            networksList.appendChild(networkItem);
+        });*/
+        
+        
+        
+        const dropdown = document.getElementById('input-ssid');
+    dropdown.innerHTML = '<option value="">Select SSID</option>'; // Reset options
+
+    jsonResponse.n.forEach(network => {
+        const option = document.createElement('option');
+        option.value = network.s;
+        option.textContent = network.s;
+        dropdown.appendChild(option);
+    });
+    document.getElementById('reload-icon').style.display = 'block';
+            document.getElementById('spinner').style.display = 'none';
+        
+        
+    } else {
+        requestNetworksData();
+    }
+    
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2-bluetooth').style.display = 'block';
+}
+        
+        async function requestData(){
+    try {
+            const credentials = { command: "get_credentials" };
+            const jsonString = JSON.stringify(credentials);
+            const command = new TextEncoder().encode(jsonString);
+
+            await commandCharacteristic.writeValue(command);
+            console.log('Credentials REQUESTED:', jsonString);
+
+            //document.getElementById('output').textContent = 'Wi-Fi credentials requested from ESP32!';
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error);
+    }
+}
+
+async function requestNetworksData(){
+    try {
+    document.getElementById('reload-icon').style.display = 'none';
+    document.getElementById('spinner').style.display = 'inline-block';
+    
+            const credentials = { command: "get_available_networks" };
+            const jsonString = JSON.stringify(credentials);
+            const command = new TextEncoder().encode(jsonString);
+
+            await commandCharacteristic.writeValue(command);
+            console.log('Credentials REQUESTED:', jsonString);
+
+            //document.getElementById('output').textContent = 'Wi-Fi credentials requested from ESP32!';
+
+    } catch (error) {
+            document.getElementById('reload-icon').style.display = 'block';
+            document.getElementById('spinner').style.display = 'none';
+        console.error('Error:', error);
+        alert('Error: ' + error);
+    }
+}
+        
+        async function startConnectionBluetooth() {
+    try {
+        console.log('Requesting Bluetooth Device...');
+        const device = await navigator.bluetooth.requestDevice({
+            filters: [{ services: [serviceUUID] }]
+        });
+
+        console.log('Connecting to GATT Server...');
+        const server = await device.gatt.connect();
+
+        console.log('Getting Service...');
+        const service = await server.getPrimaryService(serviceUUID);
+
+        console.log('Getting Data Characteristic...');
+        dataCharacteristic = await service.getCharacteristic(dataCharacteristicUUID);
+
+        console.log('Getting Command Characteristic...');
+        commandCharacteristic = await service.getCharacteristic(commandCharacteristicUUID);
+
+        console.log('Starting Notifications...');
+        await dataCharacteristic.startNotifications();
+
+        dataCharacteristic.addEventListener('characteristicvaluechanged',
+            handleCharacteristicValueChanged);
+
+        //document.getElementById('request-data').disabled = false;
+        //document.getElementById('connect').disabled = true;
+        //document.getElementById('set-credentials').disabled = false;
+        //document.getElementById('set-ssl').disabled = false;
+        
+        //document.getElementById('output').textContent = 'Connected to ESP32-S3!';
+        requestData();
+        //requestNetworksData();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error);
+    }
+}
+        
+        // Bluetooth connect button logic
+        function connectBluetooth() {
+            connectionType = "bluetooth";
+            
+	    // Add your Bluetooth connection logic here
+	    console.log('Attempting to connect via Bluetooth...');
+	
+	    
+	    
+	    startConnectionBluetooth()
+        };
+
+        // Wi-Fi instruction logic
+        function connectWifi() {
+            connectionType = "wifi";
+            
+	    console.log('Please connect to the "WifiBOY" Wi-Fi network from your device settings.');
+	
+	    document.getElementById('step1').style.display = 'none';
+	    
+	    document.getElementById('step2-wifi').style.display = 'block';
+        };
+        
+        function continueWifiStep2() {
+            document.getElementById('step2-wifi').style.display = 'none';
+            document.getElementById('step2-bluetooth').style.display = 'block';
+        }
+    </script>
+</head>
+<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col justify-center items-center p-4">
+    <div class="w-full max-w-md">
+        <h1 class="text-3xl font-bold mb-6 text-center">WifiBOY Setup</h1>
+
+        <!-- Step 1: Choose Bluetooth or Wi-Fi -->
+        <div id="step1" class="p-4 mb-6 bg-gray-800 border border-gray-700">
+            <h2 class="text-2xl font-bold mb-4">Step 1: Choose Setup Method</h2>
+
+            <!-- Bluetooth Selection -->
+            <div id="step1-bluetooth" style="display:none;" class="text-center">
+                <p class="text-lg mb-4">Bluetooth is supported on your device.</p>
+                <button onclick="connectBluetooth()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-32 rounded-lg">Connect via Bluetooth</button>
+                <p class="pt-2">or</p>
+                <button onclick="connectWifi()" class="w-full text-gray py-2">Connect via Wi-Fi</button>
+            </div>
+
+            <!-- Wi-Fi Selection -->
+            <div id="step1-wifi" style="display:none;" class="text-center">
+                <p class="text-lg mb-4">Bluetooth is not supported. You can connect via Wi-Fi.</p>
+                <button onclick="connectWifi()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 h-32 rounded-lg">Connect via Wi-Fi</button>
+                <p>or</p>
+                <button onclick="connectBluetooth()" class="w-full text-gray py-2">Connect via Bluetooth</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Connection Instructions -->
+        <div id="step2-wifi" class="p-4 mb-6 bg-gray-800 border border-gray-700 text-center hidden">
+            <h2 class="text-2xl font-bold mb-4">Step 2: Connect to WifiBOY</h2>
+            <p id="wifi-instructions" class="text-lg">For Wi-Fi: open your device's Wi-Fi settings and connect to the network named WifiBOY. Once connected, tap "Continue" to proceed.</p>
+            
+            <a href="http://192.168.4.1/wifi_setup"  style="display: flex;
+justify-content: center;
+align-items: center;" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 h-32 rounded-lg mt-4">Continue</a>
+        </div>
+        
+        <!-- Step 2: Connection Instructions -->
+        <div id="step2-bluetooth" class="p-4 mb-6 bg-gray-800 border border-gray-700 text-center hidden">
+            <!-- Network Information -->
+        <div class="p-4 mb-6 bg-gray-800 border border-gray-700">
+            <div class="text-lg mb-2"><strong>Link to Emulator: </strong><a id="link-gba" class="text-gray-400" href=""></a></div>
+            <div class="text-lg"><strong>Local IP Emulator: </strong><a id="local-ip-gba" class="text-gray-400" href=""></a></div>
+            <div id="qrcode" class="content-center mt-4"></div>
+        </div>
+
+        <!-- Wi-Fi Credentials -->
+        <div class="p-4 mb-6 bg-gray-800 border border-gray-700">
+            <div id="set-wifi-credentials">
+            <div class="mb-4">
+    <label for="input-ssid" class="block text-lg mb-2">
+        <strong>Set SSID (Current: <span id="ssid" class="text-gray-400"></span>):</strong>
+    </label>
+    <div class="flex items-center">
+        <select id="input-ssid" class="w-full p-2 bg-gray-700 border border-gray-600 text-white mr-2">
+            <option value="">Select SSID</option>
+            <!-- Dynamic options will be added here -->
+        </select>
+        <button onclick="requestNetworksData()" id="update-button" class="p-1 bg-blue-600 border border-blue-500 text-white">
+        <svg id="reload-icon" xmlns="http://www.w3.org/2000/svg" width="30px" width="30px" viewBox="0 0 512 512" fill="#fff"><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160 352 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l111.5 0c0 0 0 0 0 0l.4 0c17.7 0 32-14.3 32-32l0-112c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1L16 432c0 17.7 14.3 32 32 32s32-14.3 32-32l0-35.1 17.6 17.5c0 0 0 0 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.8c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352l34.4 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L48.4 288c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z"/></svg>
+  <div id="spinner" class="lds-roller hidden"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</button>
+        <button id="toggle-input" class="p-2 ml-2 bg-gray-600 border-gray-500 text-white">
+        <svg id="pen-icon" xmlns="http://www.w3.org/2000/svg" width="24px" width="24px" viewBox="0 0 512 512" fill="#fff" ><path d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"/></svg>
+        <svg id="dropdown-icon" xmlns="http://www.w3.org/2000/svg" width="24px" width="24px" viewBox="0 0 448 512" fill="#fff" class="hidden" ><path d="M384 432c8.8 0 16-7.2 16-16l0-320c0-8.8-7.2-16-16-16L64 80c-8.8 0-16 7.2-16 16l0 320c0 8.8 7.2 16 16 16l320 0zm64-16c0 35.3-28.7 64-64 64L64 480c-35.3 0-64-28.7-64-64L0 96C0 60.7 28.7 32 64 32l320 0c35.3 0 64 28.7 64 64l0 320zM224 352c-6.7 0-13-2.8-17.6-7.7l-104-112c-6.5-7-8.2-17.2-4.4-25.9s12.5-14.4 22-14.4l208 0c9.5 0 18.2 5.7 22 14.4s2.1 18.9-4.4 25.9l-104 112c-4.5 4.9-10.9 7.7-17.6 7.7z"/></svg>
+        </button>
+    </div>
+    <div class="mt-2">
+        <input type="text" id="input-custom-ssid" class="w-full p-2 bg-gray-700 border border-gray-600 text-white hidden" placeholder="Enter SSID" />
+    </div>
+    
+</div>
+
+            <div class="mb-4">
+                <label for="input-password" class="block text-lg mb-2"><strong>Set Password:</strong></label>
+                <input type="password" id="input-password" class="w-full p-2 bg-gray-700 border border-gray-600 text-white" placeholder="Enter Password" />
+            </div>
+            
+            <div class="flex items-center">
+                <input type="checkbox" id="start-access-point" class="mr-2">
+                <label for="start-access-point" class="text-lg">
+                   <strong>Start Access Point (Current: <span id="is-creating-ap" class="text-gray-400"></span>):</strong>
+                </label>
+            </div>
+            
+            <button id="set-credentials" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 mt-4 disabled:bg-gray-600 disabled:text-gray-400">Set Wi-Fi Credentials</button>
+            </div>
+            <div id="visit-emulator-step" class="text-center hidden">
+                <p class="text-lg mb-4">To start playing, ensure that the device you are using is connected to the same Wi-Fi network as your WifiBOY. Once connected, click 'Continue' to start playing. Alternatively, you can scan the displayed QR-Code.</p>
+                <a id="link-emulator" style="display: flex;
+justify-content: center;
+align-items: center;" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-32 rounded-lg">Continue</a>
+            </div>
+        </div>
+        </div>
+    </div>
+    
+    <script src="./src/qrcode.min.js"></script>
+
+<script>
+let usingDropdown = true;
+
+document.getElementById('toggle-input').addEventListener('click', function() {
+    const dropdown = document.getElementById('input-ssid');
+    const customInput = document.getElementById('input-custom-ssid');
+
+    if (usingDropdown) {
+        document.getElementById('dropdown-icon').style.display = 'inline-block';
+        document.getElementById('pen-icon').style.display = 'none';
+        dropdown.classList.add('hidden');
+        customInput.classList.remove('hidden');
+    } else {
+        document.getElementById('dropdown-icon').style.display = 'none';
+        document.getElementById('pen-icon').style.display = 'inline-block';
+        dropdown.classList.remove('hidden');
+        customInput.classList.add('hidden');
+    }
+    usingDropdown = !usingDropdown;
+});
+
+
+document.getElementById('set-credentials').addEventListener('click', async () => {
+    try {
+        let ssid;
+        if(!usingDropdown)
+            ssid = document.getElementById('input-custom-ssid').value;
+        else
+            ssid = document.getElementById('input-ssid').value;
+        
+        const password = document.getElementById('input-password').value;
+        const start_ap = document.getElementById('start-access-point').checked;
+        console.log(start_ap);
+
+        if (ssid && password) {
+            const credentials = { ssid: ssid, password: password, command: "set_credentials", create_ap: start_ap };
+            const jsonString = JSON.stringify(credentials);
+            const command = new TextEncoder().encode(jsonString);
+
+            await commandCharacteristic.writeValue(command);
+            console.log('Credentials SENT:', jsonString);
+            
+            requestData();
+        } else {
+            alert('Please enter both SSID and password.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+</script>
+</body>
+</html>

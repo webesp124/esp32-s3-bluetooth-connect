@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WifiBOY Setup</title>
+    <link href="./main_output.css" rel="stylesheet">
+    <style>
+    .lds-roller {
+  /* change color here */
+  color: #fff
+}
+.lds-roller,
+.lds-roller div,
+.lds-roller div:after {
+  box-sizing: border-box;
+}
+.lds-roller {
+
+  position: relative;
+  scale: 0.43;
+  top: -9px;
+  left: -9px;
+  width: 42px;
+  height: 25px;
+}
+.lds-roller div {
+  animation: lds-roller 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  transform-origin: 40px 40px;
+}
+.lds-roller div:after {
+  content: " ";
+  display: block;
+  position: absolute;
+  width: 7.2px;
+  height: 7.2px;
+  border-radius: 50%;
+  background: currentColor;
+  margin: -3.6px 0 0 -3.6px;
+}
+.lds-roller div:nth-child(1) {
+  animation-delay: -0.036s;
+}
+.lds-roller div:nth-child(1):after {
+  top: 62.62742px;
+  left: 62.62742px;
+}
+.lds-roller div:nth-child(2) {
+  animation-delay: -0.072s;
+}
+.lds-roller div:nth-child(2):after {
+  top: 67.71281px;
+  left: 56px;
+}
+.lds-roller div:nth-child(3) {
+  animation-delay: -0.108s;
+}
+.lds-roller div:nth-child(3):after {
+  top: 70.90963px;
+  left: 48.28221px;
+}
+.lds-roller div:nth-child(4) {
+  animation-delay: -0.144s;
+}
+.lds-roller div:nth-child(4):after {
+  top: 72px;
+  left: 40px;
+}
+.lds-roller div:nth-child(5) {
+  animation-delay: -0.18s;
+}
+.lds-roller div:nth-child(5):after {
+  top: 70.90963px;
+  left: 31.71779px;
+}
+.lds-roller div:nth-child(6) {
+  animation-delay: -0.216s;
+}
+.lds-roller div:nth-child(6):after {
+  top: 67.71281px;
+  left: 24px;
+}
+.lds-roller div:nth-child(7) {
+  animation-delay: -0.252s;
+}
+.lds-roller div:nth-child(7):after {
+  top: 62.62742px;
+  left: 17.37258px;
+}
+.lds-roller div:nth-child(8) {
+  animation-delay: -0.288s;
+}
+.lds-roller div:nth-child(8):after {
+  top: 56px;
+  left: 12.28719px;
+}
+@keyframes lds-roller {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col justify-center items-center p-4">
+    <div class="w-full max-w-md">
+        <h1 class="text-3xl font-bold mb-6 text-center">WifiBOY Setup</h1>
+
+        <div id="step1" class="p-4 mb-6 bg-gray-800 border border-gray-700 text-center">
+        <div class="p-4 mb-6 bg-gray-800 border border-gray-700">
+            <div class="text-lg mb-2"><strong>Link to Emulator: </strong><a id="link-gba" class="text-gray-400" href=""></a></div>
+            <div class="text-lg"><strong>Local IP Emulator: </strong><a id="local-ip-gba" class="text-gray-400" href=""></a></div>
+        </div>
+
+        <div id="step2" class="p-4 mb-6 bg-gray-800 border border-gray-700">
+            <div class="mb-4">
+    <label for="input-ssid" class="block text-lg mb-2">
+    <p class="text-lg mb-4">Please enter you Wi-Fi credentials below.</p>
+        <strong>Set SSID (Current: <span id="ssid" class="text-gray-400"></span>):</strong>
+    </label>
+    <div class="flex items-center">
+        <select id="input-ssid" class="w-full p-2 bg-gray-700 border border-gray-600 text-white mr-2">
+            <option value="">Select SSID</option>
+        </select>
+        <button onclick="getAvailableNetworks()" id="update-button" class="p-1 bg-blue-600 border border-blue-500 text-white">
+        <svg id="reload-icon" xmlns="http://www.w3.org/2000/svg" width="30px" width="30px" viewBox="0 0 512 512" fill="#fff"><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160 352 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l111.5 0c0 0 0 0 0 0l.4 0c17.7 0 32-14.3 32-32l0-112c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1L16 432c0 17.7 14.3 32 32 32s32-14.3 32-32l0-35.1 17.6 17.5c0 0 0 0 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.8c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352l34.4 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L48.4 288c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z"/></svg>
+  <div id="spinner" class="lds-roller hidden"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</button>
+        <button id="toggle-input" class="p-2 ml-2 bg-gray-600 border-gray-500 text-white">
+        <svg id="pen-icon" xmlns="http://www.w3.org/2000/svg" width="24px" width="24px" viewBox="0 0 512 512" fill="#fff" ><path d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"/></svg>
+        <svg id="dropdown-icon" xmlns="http://www.w3.org/2000/svg" width="24px" width="24px" viewBox="0 0 448 512" fill="#fff" class="hidden" ><path d="M384 432c8.8 0 16-7.2 16-16l0-320c0-8.8-7.2-16-16-16L64 80c-8.8 0-16 7.2-16 16l0 320c0 8.8 7.2 16 16 16l320 0zm64-16c0 35.3-28.7 64-64 64L64 480c-35.3 0-64-28.7-64-64L0 96C0 60.7 28.7 32 64 32l320 0c35.3 0 64 28.7 64 64l0 320zM224 352c-6.7 0-13-2.8-17.6-7.7l-104-112c-6.5-7-8.2-17.2-4.4-25.9s12.5-14.4 22-14.4l208 0c9.5 0 18.2 5.7 22 14.4s2.1 18.9-4.4 25.9l-104 112c-4.5 4.9-10.9 7.7-17.6 7.7z"/></svg>
+        </button>
+    </div>
+    <div class="mt-2">
+        <input type="text" id="input-custom-ssid" class="w-full p-2 bg-gray-700 border border-gray-600 text-white hidden" placeholder="Enter SSID" />
+    </div>
+    
+</div>
+
+            <div class="mb-4">
+                <label for="input-password" class="block text-lg mb-2"><strong>Set Password:</strong></label>
+                <input type="password" id="input-password" class="w-full p-2 bg-gray-700 border border-gray-600 text-white" placeholder="Enter Password" />
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" id="start-access-point" class="mr-2">
+                <label for="start-access-point" class="text-lg">
+                   <strong>Start Access Point (Current: <span id="is-creating-ap" class="text-gray-400"></span>):</strong>
+                </label>
+            </div>
+            <button onclick="transmitCredentials()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 mt-4 disabled:bg-gray-600 disabled:text-gray-400">Set Wi-Fi Credentials</button>
+        </div>
+        </div>
+        <div id="step3" class="p-4 mb-6 bg-gray-800 border border-gray-700 hidden">
+            <div class="text-center">
+                <p class="text-lg mb-4">To proceed and start playing, please connect this device to the same Wi-Fi network as your WifiBOY.</p>
+                <a id="link-emulator" style="display: flex;
+justify-content: center;
+align-items: center;" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 h-32 rounded-lg">Continue</a>
+            </div>
+        </div>
+    </div>
+<script>
+let usingDropdown = true;
+
+document.getElementById('toggle-input').addEventListener('click', function() {
+    const dropdown = document.getElementById('input-ssid');
+    const customInput = document.getElementById('input-custom-ssid');
+
+    if (usingDropdown) {
+        document.getElementById('dropdown-icon').style.display = 'inline-block';
+        document.getElementById('pen-icon').style.display = 'none';
+        dropdown.classList.add('hidden');
+        customInput.classList.remove('hidden');
+    } else {
+        document.getElementById('dropdown-icon').style.display = 'none';
+        document.getElementById('pen-icon').style.display = 'inline-block';
+        dropdown.classList.remove('hidden');
+        customInput.classList.add('hidden');
+    }
+    usingDropdown = !usingDropdown;
+});
+
+function getWiFiSettings() {
+    fetch('http://192.168.1.3/get_wifi_settings')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Wi-Fi Settings:', data);
+            
+            let localIPGBA = "https://" + data.wifi_ip_address + "/";
+        let linkGBAAddress = "https://" + data.web_url + "/";
+        
+        if (data.web_url == "") {
+            linkGBAAddress = localIPGBA;
+        }
+        
+        document.getElementById('link-gba').textContent = linkGBAAddress;
+        document.getElementById('link-gba').href = linkGBAAddress;
+        
+        document.getElementById('local-ip-gba').textContent = localIPGBA;
+        document.getElementById('local-ip-gba').href = localIPGBA;
+        
+        document.getElementById('is-creating-ap').textContent = data.is_creating_ap;
+        document.getElementById('ssid').textContent = data.ssid;
+        
+        document.getElementById('link-emulator').href = linkGBAAddress;
+        
+        getAvailableNetworks();
+        })
+        .catch(error => {
+            console.error('There has been a problem with your fetch operation:', error);
+        });
+}
+
+function getAvailableNetworks() {
+    document.getElementById('reload-icon').style.display = 'none';
+    document.getElementById('spinner').style.display = 'inline-block';
+    fetch('http://192.168.1.3/get_available_networks')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+        const dropdown = document.getElementById('input-ssid');
+    dropdown.innerHTML = '<option value="">Select SSID</option>';
+
+    data.n.forEach(network => {
+        const option = document.createElement('option');
+        option.value = network.s;
+        option.textContent = network.s;
+        dropdown.appendChild(option);
+    });
+       document.getElementById('reload-icon').style.display = 'block';
+    document.getElementById('spinner').style.display = 'none'; 
+        })
+        .catch(error => {
+            console.error('There has been a problem with your fetch operation:', error);
+            document.getElementById('reload-icon').style.display = 'block';
+            document.getElementById('spinner').style.display = 'none';
+        });
+    
+}
+
+async function transmitCredentials() {
+    let ssid;
+    if(!usingDropdown)
+        ssid = document.getElementById('input-custom-ssid').value;
+    else
+        ssid = document.getElementById('input-ssid').value;
+    
+    const password = document.getElementById('input-password').value;
+    const start_ap = document.getElementById('start-access-point').checked;
+
+    if (ssid && password) {
+      const data = {
+        ssid: ssid,
+        password: password,
+        create_ap: start_ap
+      };
+
+      try {
+        const response = await fetch('http://192.168.1.3/update_wifi', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          
+          document.getElementById('step1').style.display = 'none';
+          document.getElementById('step2').style.display = 'none';
+          document.getElementById('step3').style.display = 'block';
+        } else {
+          alert("Failed to update WiFi settings");
+        }
+      } catch (error) {
+        alert("Error during fetch:");
+      }
+    } else {
+      alert("Please fill in both SSID and password.");
+    }
+  }
+
+getWiFiSettings();
+
+</script>
+</body>
+</html>
